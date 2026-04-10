@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chatbot Embed Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=Cormorant+Garamond:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #f5f3ee;
+    min-height: 100vh;
+  }
+
+  /* Fake agency website background */
+  .fake-website {
+    padding: 40px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .fake-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 60px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #ddd;
+  }
+
+  .fake-logo {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px;
+    font-weight: 600;
+    color: #1a1a1a;
+    letter-spacing: 0.02em;
+  }
+
+  .fake-logo span { color: #C9A84C; }
+
+  .fake-nav-links { display: flex; gap: 28px; }
+  .fake-nav-links a {
+    font-size: 13px;
+    color: #666;
+    text-decoration: none;
+    letter-spacing: 0.04em;
+  }
+
+  .fake-hero {
+    margin-bottom: 50px;
+  }
+
+  .fake-hero h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 48px;
+    font-weight: 300;
+    color: #1a1a1a;
+    line-height: 1.2;
+    margin-bottom: 16px;
+  }
+
+  .fake-hero p {
+    font-size: 15px;
+    color: #666;
+    max-width: 500px;
+    line-height: 1.7;
+  }
+
+  .fake-properties {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+
+  .fake-card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  }
+
+  .fake-card-img {
+    height: 140px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+  }
+
+  .fake-card:nth-child(1) .fake-card-img { background: linear-gradient(135deg, #1a1a2e, #16213e); }
+  .fake-card:nth-child(2) .fake-card-img { background: linear-gradient(135deg, #0d1b2a, #1b2838); }
+  .fake-card:nth-child(3) .fake-card-img { background: linear-gradient(135deg, #1a1a2e, #2d1b69); }
+
+  .fake-card-body { padding: 14px; }
+  .fake-card-price {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18px;
+    font-weight: 600;
+    color: #C9A84C;
+  }
+  .fake-card-name { font-size: 12px; color: #888; margin-top: 3px; }
+
+  /* ===== CHAT WIDGET ===== */
+  #chat-bubble {
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #C9A84C, #E8C97A);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 20px rgba(201,168,76,0.4);
+    z-index: 1000;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+
+  #chat-bubble:hover {
+    transform: scale(1.08);
+    box-shadow: 0 6px 28px rgba(201,168,76,0.5);
+  }
+
+  #chat-bubble svg { width: 24px; height: 24px; fill: #0D0D0D; transition: opacity 0.2s; }
+
+  .bubble-notif {
+    position: absolute;
+    top: -2px; right: -2px;
+    width: 18px; height: 18px;
+    background: #e74c3c;
+    border-radius: 50%;
+    border: 2px solid #f5f3ee;
+    font-size: 10px;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+  }
+
+  /* Chat window */
+  #chat-widget {
+    position: fixed;
+    bottom: 96px;
+    right: 28px;
+    width: 370px;
+    height: 520px;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+    z-index: 999;
+    display: none;
+    flex-direction: column;
+    transform: scale(0.9) translateY(20px);
+    opacity: 0;
+    transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transform-origin: bottom right;
+  }
+
+  #chat-widget.open {
+    display: flex;
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+
+  /* Widget header */
+  .w-header {
+    background: #161616;
+    padding: 16px 18px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid rgba(201,168,76,0.15);
+    flex-shrink: 0;
+    position: relative;
+  }
+
+  .w-header::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #C9A84C, transparent);
+  }
+
+  .w-avatar {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #C9A84C, #E8C97A);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; flex-shrink: 0; position: relative;
+  }
+
+  .w-avatar::after {
+    content: '';
+    position: absolute; bottom: 1px; right: 1px;
+    width: 9px; height: 9px;
+    background: #4CAF50; border-radius: 50%;
+    border: 2px solid #161616;
+  }
+
+  .w-info h3 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 16px; font-weight: 600;
+    color: #E8E4DC;
+  }
+
+  .w-info p { font-size: 11px; color: #C9A84C; letter-spacing: 0.06em; text-transform: uppercase; }
+
+  .w-close {
+    margin-left: auto;
+    background: none; border: none;
+    color: #8A8478; cursor: pointer; font-size: 20px;
+    line-height: 1; padding: 4px;
+    transition: color 0.2s;
+  }
+  .w-close:hover { color: #E8E4DC; }
+
+  /* Chat messages */
+  .w-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 14px;
+    background: #161616;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    scroll-behavior: smooth;
+  }
+
+  .w-messages::-webkit-scrollbar { width: 3px; }
+  .w-messages::-webkit-scrollbar-thumb { background: #2A2A2A; border-radius: 2px; }
+
+  .w-msg { display: flex; gap: 8px; animation: fadeUp 0.3s ease; }
+  .w-msg.user { flex-direction: row-reverse; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .w-msg-av {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: linear-gradient(135deg, #C9A84C, #E8C97A);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; flex-shrink: 0; align-self: flex-end;
+  }
+
+  .w-msg.user .w-msg-av {
+    background: #2A2A2A;
+    border: 1px solid rgba(201,168,76,0.15);
+    color: #8A8478;
+  }
+
+  .w-bubble {
+    max-width: 80%;
+    padding: 10px 13px;
+    border-radius: 12px;
+    font-size: 13px;
+    line-height: 1.55;
+    color: #E8E4DC;
+  }
+
+  .w-msg.bot .w-bubble {
+    background: #1F1F1F;
+    border: 1px solid rgba(201,168,76,0.12);
+    border-bottom-left-radius: 3px;
+  }
+
+  .w-msg.user .w-bubble {
+    background: rgba(201,168,76,0.12);
+    border: 1px solid rgba(201,168,76,0.2);
+    border-bottom-right-radius: 3px;
+    text-align: right;
+  }
+
+  /* Quick replies */
+  .w-quick { display: flex; flex-wrap: wrap; gap: 6px; padding-left: 34px; }
+  .w-qr {
+    background: transparent;
+    border: 1px solid rgba(201,168,76,0.3);
+    border-radius: 16px; padding: 5px 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11.5px; color: #C9A84C;
+    cursor: pointer; transition: all 0.2s; white-space: nowrap;
+  }
+  .w-qr:hover { background: rgba(201,168,76,0.1); }
+
+  /* Lead form */
+  .w-lead {
+    background: #1F1F1F;
+    border: 1px solid rgba(201,168,76,0.15);
+    border-radius: 10px; padding: 13px;
+    display: flex; flex-direction: column; gap: 8px;
+    margin-left: 34px;
+  }
+
+  .w-lead h4 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 14px; color: #C9A84C;
+  }
+
+  .w-lead input {
+    background: #2A2A2A;
+    border: 1px solid rgba(201,168,76,0.15);
+    border-radius: 6px; padding: 8px 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px; color: #E8E4DC; outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .w-lead input:focus { border-color: #C9A84C; }
+  .w-lead input::placeholder { color: #8A8478; }
+
+  .w-lead button {
+    background: linear-gradient(135deg, #C9A84C, #E8C97A);
+    border: none; border-radius: 6px; padding: 9px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px; font-weight: 500;
+    color: #0D0D0D; cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .w-lead button:hover { opacity: 0.85; }
+
+  /* Typing */
+  .w-typing { display: flex; gap: 8px; align-items: center; }
+  .w-dots {
+    display: flex; gap: 3px; padding: 10px 13px;
+    background: #1F1F1F; border: 1px solid rgba(201,168,76,0.12);
+    border-radius: 12px; border-bottom-left-radius: 3px;
+  }
+  .w-dots span {
+    width: 5px; height: 5px;
+    background: #C9A84C; border-radius: 50%;
+    animation: bounce 1.2s infinite; opacity: 0.5;
+  }
+  .w-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .w-dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes bounce {
+    0%,60%,100% { transform: translateY(0); opacity: 0.5; }
+    30% { transform: translateY(-4px); opacity: 1; }
+  }
+
+  /* Input */
+  .w-input-area {
+    background: #161616;
+    border-top: 1px solid rgba(201,168,76,0.08);
+    padding: 12px 14px;
+    display: flex; gap: 8px; align-items: center;
+    flex-shrink: 0;
+  }
+
+  .w-input-area input {
+    flex: 1;
+    background: #1F1F1F;
+    border: 1px solid rgba(201,168,76,0.15);
+    border-radius: 20px; padding: 9px 15px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px; color: #E8E4DC; outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .w-input-area input:focus { border-color: rgba(201,168,76,0.4); }
+  .w-input-area input::placeholder { color: #8A8478; }
+
+  .w-send {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: linear-gradient(135deg, #C9A84C, #E8C97A);
+    border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: opacity 0.2s, transform 0.1s; flex-shrink: 0;
+  }
+  .w-send:hover { opacity: 0.85; }
+  .w-send:active { transform: scale(0.93); }
+  .w-send svg { width: 14px; height: 14px; fill: #0D0D0D; }
+
+  /* Code section */
+  .code-section {
+    background: #1a1a1a;
+    border: 1px solid #333;
+    border-radius: 12px;
+    padding: 20px;
+    margin: 30px 0;
+    position: relative;
+  }
+
+  .code-section h3 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18px; color: #C9A84C;
+    margin-bottom: 12px;
+  }
+
+  .code-section p { font-size: 13px; color: #aaa; margin-bottom: 12px; }
+
+  .code-block {
+    background: #0d0d0d;
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 14px;
+    font-family: monospace;
+    font-size: 12px;
+    color: #7ec8e3;
+    overflow-x: auto;
+    white-space: pre;
+  }
+
+  .copy-btn {
+    margin-top: 10px;
+    background: rgba(201,168,76,0.1);
+    border: 1px solid rgba(201,168,76,0.3);
+    border-radius: 6px;
+    padding: 7px 16px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px; color: #C9A84C;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .copy-btn:hover { background: rgba(201,168,76,0.2); }
+
+  @media (max-width: 600px) {
+    .fake-properties { grid-template-columns: 1fr; }
+    .fake-nav-links { display: none; }
+    #chat-widget { width: calc(100vw - 40px); right: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Fake real estate website -->
+<div class="fake-website">
+  <nav class="fake-nav">
+    <div class="fake-logo">Luxe<span>Realty</span></div>
+    <div class="fake-nav-links">
+      <a href="#">Properties</a>
+      <a href="#">Sell</a>
+      <a href="#">About</a>
+      <a href="#">Contact</a>
+    </div>
+  </nav>
+
+  <div class="fake-hero">
+    <h1>Find Your<br>Perfect Home</h1>
+    <p>Discover premium properties in the most sought-after locations. Our AI assistant is here to guide you 24/7.</p>
+  </div>
+
+  <div class="fake-properties">
+    <div class="fake-card">
+      <div class="fake-card-img">🏙️</div>
+      <div class="fake-card-body">
+        <div class="fake-card-price">$2,450,000</div>
+        <div class="fake-card-name">Downtown Penthouse</div>
+      </div>
+    </div>
+    <div class="fake-card">
+      <div class="fake-card-img">🏡</div>
+      <div class="fake-card-body">
+        <div class="fake-card-price">$1,200,000</div>
+        <div class="fake-card-name">Suburban Villa</div>
+      </div>
+    </div>
+    <div class="fake-card">
+      <div class="fake-card-img">🌊</div>
+      <div class="fake-card-body">
+        <div class="fake-card-price">$3,800,000</div>
+        <div class="fake-card-name">Beachfront Estate</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Embed code section -->
+  <div class="code-section">
+    <h3>📋 How to embed on any website</h3>
+    <p>Just paste this one line of code before the &lt;/body&gt; tag of any website:</p>
+    <div class="code-block" id="embedCode">&lt;script src="https://yourdomain.com/chatbot-widget.js"&gt;&lt;/script&gt;</div>
+    <button class="copy-btn" onclick="copyCode()">Copy embed code</button>
+    <p style="margin-top:12px;font-size:12px;color:#555;">That's it. The chat bubble appears automatically on any page.</p>
+  </div>
+</div>
+
+<!-- ===== FLOATING CHAT BUBBLE ===== -->
+<button id="chat-bubble" onclick="toggleChat()">
+  <svg id="bubble-icon" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/></svg>
+  <div class="bubble-notif">1</div>
+</button>
+
+<!-- Chat widget -->
+<div id="chat-widget">
+  <div class="w-header">
+    <div class="w-avatar">🏛️</div>
+    <div class="w-info">
+      <h3>Aria — Property Advisor</h3>
+      <p>Luxe Realty AI · Online</p>
+    </div>
+    <button class="w-close" onclick="toggleChat()">✕</button>
+  </div>
+
+  <div class="w-messages" id="wMessages"></div>
+
+  <div class="w-input-area">
+    <input type="text" id="wInput" placeholder="Ask me anything…" />
+    <button class="w-send" onclick="wSend()">
+      <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+    </button>
+  </div>
+</div>
+
+<script>
+const SYSTEM_PROMPT = `You are Aria, a warm and professional AI assistant for Luxe Realty.
+
+AGENCY INFO:
+- Name: Luxe Realty
+- Phone: +91 98765 43210
+- Office: 42 MG Road, Bangalore - 560001
+- Email: contact@luxerealty.in
+- Working Hours: Monday to Saturday, 10am to 7pm
+
+ABOUT US:
+- 15 years of experience in real estate
+- 1000+ properties sold across Bangalore
+- Trusted by 5000+ happy families
+- Specialising in residential and commercial properties
+- Award winning agency in Bangalore 2023
+
+AVAILABLE PROPERTIES:
+
+1. 3BHK Luxury Flat - Bandra West, Mumbai
+   - Price: 1.8 Crore
+   - Area: 1450 sqft
+   - Floor: 8th floor with sea view
+   - Features: Fully furnished, 2 parking slots, swimming pool, gym, 24/7 security
+   - Possession: Ready to move
+
+2. 2BHK Modern Apartment - Koramangala, Bangalore
+   - Price: 85 Lakh
+   - Area: 1100 sqft
+   - Floor: 3rd floor
+   - Features: Semi furnished, 1 parking, near metro, power backup
+   - Possession: Ready to move
+
+3. 4BHK Villa - Whitefield, Bangalore
+   - Price: 2.4 Crore
+   - Area: 3200 sqft
+   - Features: Private garden, 3 parking slots, modular kitchen, solar panels, gated community
+   - Possession: December 2025
+
+4. 1BHK Studio Apartment - Indiranagar, Bangalore
+   - Price: 45 Lakh
+   - Area: 650 sqft
+   - Floor: 5th floor
+   - Features: Fully furnished, ideal for working professionals, near restaurants and metro
+   - Possession: Ready to move
+
+5. Commercial Office Space - MG Road, Bangalore
+   - Price: 1.2 Crore
+   - Area: 1800 sqft
+   - Floor: 2nd floor, main road facing
+   - Features: Glass facade, 4 parking slots, 24/7 access, fiber internet ready
+   - Possession: Ready to move
+
+6. 2BHK Budget Flat - Electronic City, Bangalore
+   - Price: 38 Lakh
+   - Area: 950 sqft
+   - Floor: 1st floor
+   - Features: Near IT park, school and hospital nearby, good rental income potential
+   - Possession: March 2026
+
+RULES:
+- Only recommend properties from the list above
+- Match properties to customer budget when they mention it
+- When someone wants to visit or book a viewing, end your message with LEAD_FORM
+- Always mention the phone number +91 98765 43210 when someone wants to contact directly
+- Keep responses concise 2 to 4 sentences
+- Be warm, professional and helpful at all times`;
+
+let history = [];
+let leadDone = false;
+let isOpen = false;
+
+function toggleChat() {
+  const widget = document.getElementById('chat-widget');
+  const notif = document.querySelector('.bubble-notif');
+  isOpen = !isOpen;
+
+  if (isOpen) {
+    widget.style.display = 'flex';
+    setTimeout(() => widget.classList.add('open'), 10);
+    if (notif) notif.remove();
+    if (document.getElementById('wMessages').children.length === 0) initChat();
+  } else {
+    widget.classList.remove('open');
+    setTimeout(() => { widget.style.display = 'none'; }, 250);
+  }
+}
+
+function initChat() {
+  wAddMsg('bot', "Hi! I'm Aria 👋 I can help you find properties, answer questions, or book a viewing. What are you looking for?");
+  setTimeout(() => {
+    wAddQuick(['🏠 Browse listings', '📅 Book a viewing', '💰 Pricing info', '🏷️ Sell my home']);
+  }, 300);
+}
+
+async function callClaude(msg) {
+  // Add user message to history
+  history.push({ role: "user", content: msg });
+
+  const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer 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"
+    },
+    body: JSON.stringify({
+      model: "llama-3.3-70b-versatile",
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        ...history
+      ],
+      max_tokens: 500,
+      temperature: 0.7
+    })
+  });
+
+  const data = await res.json();
+  console.log("Groq response:", JSON.stringify(data));
+
+  if (!data.choices || !data.choices[0]) {
+    throw new Error("No response from Groq: " + JSON.stringify(data));
+  }
+
+  const reply = data.choices[0].message.content;
+  history.push({ role: "assistant", content: reply });
+  return reply;
+}
+
+function wAddMsg(role, text) {
+  const win = document.getElementById('wMessages');
+  let clean = text;
+  let showLead = false;
+
+  if (text.includes('LEAD_FORM')) {
+    clean = text.replace('LEAD_FORM', '').trim();
+    showLead = true;
+  }
+
+  const div = document.createElement('div');
+  div.className = `w-msg ${role}`;
+
+  const av = document.createElement('div');
+  av.className = 'w-msg-av';
+  av.textContent = role === 'bot' ? '🏛️' : '👤';
+
+  const bubble = document.createElement('div');
+  bubble.className = 'w-bubble';
+  bubble.textContent = clean;
+
+  div.appendChild(av);
+  div.appendChild(bubble);
+  win.appendChild(div);
+
+  if (showLead && !leadDone) {
+    leadDone = true;
+    const form = document.createElement('div');
+    form.className = 'w-lead';
+    form.id = 'wLeadForm';
+    form.innerHTML = `
+      <h4>Book a Private Viewing</h4>
+      <input type="text" placeholder="Your name" id="wName"/>
+      <input type="email" placeholder="Email address" id="wEmail"/>
+      <button onclick="wSubmitLead()">Request Viewing →</button>`;
+    win.appendChild(form);
+  }
+
+  win.scrollTop = win.scrollHeight;
+}
+
+function wAddQuick(opts) {
+  const win = document.getElementById('wMessages');
+  const div = document.createElement('div');
+  div.className = 'w-quick';
+  opts.forEach(o => {
+    const btn = document.createElement('button');
+    btn.className = 'w-qr';
+    btn.textContent = o;
+    btn.onclick = () => { div.remove(); document.getElementById('wInput').value = o; wSend(); };
+    div.appendChild(btn);
+  });
+  win.appendChild(div);
+  win.scrollTop = win.scrollHeight;
+}
+
+function wShowTyping() {
+  const win = document.getElementById('wMessages');
+  const d = document.createElement('div');
+  d.className = 'w-typing'; d.id = 'wTyping';
+  d.innerHTML = `<div class="w-msg-av">🏛️</div><div class="w-dots"><span></span><span></span><span></span></div>`;
+  win.appendChild(d);
+  win.scrollTop = win.scrollHeight;
+}
+
+function wHideTyping() {
+  const t = document.getElementById('wTyping');
+  if (t) t.remove();
+}
+
+async function wSend() {
+  const input = document.getElementById('wInput');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  wAddMsg('user', text);
+  wShowTyping();
+  try {
+    const reply = await callClaude(text);
+    wHideTyping();
+    wAddMsg('bot', reply);
+  } catch(e) {
+    wHideTyping();
+    wAddMsg('bot', 'Sorry, there was a connection issue. Please try again.');
+  }
+}
+
+function wSubmitLead() {
+  const name = document.getElementById('wName')?.value;
+  const email = document.getElementById('wEmail')?.value;
+  if (!name || !email) { alert('Please enter your name and email.'); return; }
+  document.getElementById('wLeadForm').innerHTML = `<p style="color:#C9A84C;font-size:12px;text-align:center;padding:4px 0">✓ Viewing request received! An agent will contact you shortly.</p>`;
+  wAddMsg('bot', `Perfect ${name}! A senior agent will reach out to you at ${email} within the hour. Anything else I can help with?`);
+}
+
+document.getElementById('wInput').addEventListener('keypress', e => {
+  if (e.key === 'Enter') wSend();
+});
+
+function copyCode() {
+  const code = document.getElementById('embedCode').textContent;
+  navigator.clipboard.writeText(code).then(() => {
+    const btn = document.querySelector('.copy-btn');
+    btn.textContent = '✓ Copied!';
+    setTimeout(() => btn.textContent = 'Copy embed code', 2000);
+  });
+}
+</script>
+</body>
+</html>
