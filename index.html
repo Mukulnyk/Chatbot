@@ -155,7 +155,7 @@ function initChat() {
 
 async function callAI(msg) {
   history.push({ role: "user", content: msg });
-  const res = await fetch("https://groq-proxy.mukulupmanyu5.workers.dev", {
+  const res = await fetch("https://groq-proxy.mukulupmanyu5.workers.dev/", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "system", content: SYSTEM_PROMPT }, ...history], max_tokens: 500, temperature: 0.7 })
